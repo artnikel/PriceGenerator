@@ -4,11 +4,13 @@ package service
 import (
 	"context"
 	"fmt"
+
+	"github.com/shopspring/decimal"
 )
 
 // GeneratorRepository is interface with method for generating prices
 type GeneratorRepository interface {
-	GeneratePrices(ctx context.Context, initMap map[string]float64) error
+	GeneratePrices(ctx context.Context, initMap map[string]decimal.Decimal) error
 }
 
 // GeneratorService contains GeneratorRepository interface
@@ -22,7 +24,7 @@ func NewGeneratorService(genRep GeneratorRepository) *GeneratorService {
 }
 
 // GeneratePrices is a method of GeneratorService that calls method of Repository
-func (p *GeneratorService) GeneratePrices(ctx context.Context, initMap map[string]float64) error {
+func (p *GeneratorService) GeneratePrices(ctx context.Context, initMap map[string]decimal.Decimal) error {
 	err := p.genRep.GeneratePrices(ctx, initMap)
 	if err != nil {
 		return fmt.Errorf("GeneratorService-GeneratePrices: error: %w", err)
