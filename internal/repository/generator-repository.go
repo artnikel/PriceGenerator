@@ -61,7 +61,7 @@ func (r *RedisRepository) GeneratePrices(ctx context.Context, initMap map[string
 			r.stockData.Store(company, currentPrices[company])
 
 			_, err := r.client.XAdd(ctx, &redis.XAddArgs{
-				Stream: "messagestream",
+				Stream: "shares",
 				Values: map[string]interface{}{
 					"message": fmt.Sprintf("%s: %.2f", company, currentPrices[company].InexactFloat64()),
 				},
