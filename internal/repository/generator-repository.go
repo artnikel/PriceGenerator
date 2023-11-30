@@ -42,24 +42,18 @@ var InitialMap = map[string]decimal.Decimal{
 func (r *RedisRepository) GeneratePrices(ctx context.Context, initMap map[string]decimal.Decimal) error {
 	seed := time.Now().UnixNano()
 	rng := rand.New(rand.NewSource(seed))
-
 	currentPrices := make(map[string]decimal.Decimal, len(initMap))
-
 	for company, price := range initMap {
 		currentPrices[company] = price
 	}
-
 	for {
 		for company := range initMap {
 			change := decimal.NewFromFloat(rng.Float64() * 20.0).Sub(decimal.NewFromFloat(10.0))
 			currentPrices[company] = currentPrices[company].Add(change)
-
 			if currentPrices[company].LessThan(decimal.NewFromFloat(0)) {
 				currentPrices[company] = decimal.NewFromFloat(0.1)
 			}
-
 			r.stockData.Store(company, currentPrices[company])
-
 			_, err := r.client.XAdd(ctx, &redis.XAddArgs{
 				Stream: "shares",
 				Values: map[string]interface{}{
@@ -68,10 +62,9 @@ func (r *RedisRepository) GeneratePrices(ctx context.Context, initMap map[string
 				MaxLen: 5,
 			}).Result()
 			if err != nil {
-				log.Fatalf("Error when writing a message to Redis Stream: %v", err)
+				log.Fatalf("error when writing a message to Redis Stream: %v", err)
 			}
 		}
-
 		time.Sleep(time.Second / 2)
 	}
 }

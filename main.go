@@ -8,19 +8,17 @@ import (
 
 	"github.com/artnikel/PriceGenerator/internal/config"
 	"github.com/artnikel/PriceGenerator/internal/repository"
-	"github.com/artnikel/PriceGenerator/internal/service"
 	"github.com/go-redis/redis/v8"
 )
 
 func connectRedis() (*redis.Client, error) {
 	cfg, err := config.New()
 	if err != nil {
-		log.Fatal("Could not parse config: ", err)
+		log.Fatal("could not parse config: ", err)
 	}
 	client := redis.NewClient(&redis.Options{
-		Addr:     cfg.RedisPriceAddress,
-		Password: cfg.RedisPricePassword,
-		DB:       0,
+		Addr: cfg.RedisPriceAddress,
+		DB:   0,
 	})
 	_, err = client.Ping(client.Context()).Result()
 	if err != nil {
@@ -34,21 +32,20 @@ func main() {
 	ctx := context.Background()
 	redisClient, err := connectRedis()
 	if err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
+		log.Fatalf("failed to connect to Redis: %v", err)
 	}
 	defer func() {
 		errClose := redisClient.Close()
 		if errClose != nil {
-			log.Fatalf("Failed to disconnect from Redis: %v", errClose)
+			log.Fatalf("failed to disconnect from Redis: %v", errClose)
 		}
 	}()
 	repoRedis := repository.NewRedisRepository(redisClient)
-	servRedis := service.NewGeneratorService(repoRedis)
 	fmt.Println("Generating started")
 	for {
-		err := servRedis.GeneratePrices(ctx, repository.InitialMap)
+		err := repoRedis.GeneratePrices(ctx, repository.InitialMap)
 		if err != nil {
-			log.Fatalf("Failed to run method GeneratePrices: %v", err)
+			log.Fatalf("failed to run method GeneratePrices: %v", err)
 		}
 	}
 }
