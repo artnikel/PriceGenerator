@@ -4,7 +4,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
 	"math/rand"
 	"strings"
 	"sync"
@@ -44,33 +43,31 @@ func (r *RedisRepository) GeneratePrices(ctx context.Context, initMap map[string
 	seed := time.Now().UnixNano()
 	rng := rand.New(rand.NewSource(seed))
 	currentPrices := make(map[string]decimal.Decimal, len(initMap))
-	ctxTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-
 	msgs, err := r.client.XRead(ctxTimeout, &redis.XReadArgs{
 		Streams: []string{"shares", "0"},
 		Count:   10,
-		Block:   1000,
+		Block:   0,
 	}).Result()
-
 	if err == nil && len(msgs) > 0 && len(msgs[0].Messages) > 0 {
 		for _, message := range msgs[0].Messages {
 			if rawMessage, ok := message.Values["message"].(string); ok {
 				parts := strings.Split(rawMessage, ":")
 				if len(parts) != 2 {
-					log.Fatalf("RedisRepository-GeneratePrices: Incorrect message format: %s", rawMessage)
+					return fmt.Errorf("incorrect message format: %s", rawMessage)
 				} else {
 					company := strings.TrimSpace(parts[0])
 					priceStr := strings.TrimSpace(parts[1])
 					price, err := decimal.NewFromString(priceStr)
 					if err != nil {
-						log.Fatalf("RedisRepository-GeneratePrices: Error when converting price to number: %v", err)
+						return fmt.Errorf("error when converting price to number: %v", err)
 					} else {
 						currentPrices[company] = price
 					}
 				}
 			} else {
-				log.Fatalf("RedisRepository-GeneratePrices: Missing 'message' field in Redis stream")
+				return fmt.Errorf("missing 'message' field in Redis stream")
 			}
 		}
 	} else {
@@ -78,7 +75,6 @@ func (r *RedisRepository) GeneratePrices(ctx context.Context, initMap map[string
 			currentPrices[company] = price
 		}
 	}
-
 	for {
 		for company := range initMap {
 			change := decimal.NewFromFloat(rng.Float64() * 20.0).Sub(decimal.NewFromFloat(10.0))
@@ -95,7 +91,7 @@ func (r *RedisRepository) GeneratePrices(ctx context.Context, initMap map[string
 				MaxLen: 5,
 			}).Result()
 			if err != nil {
-				log.Fatalf("error when writing a message to Redis Stream: %v", err)
+				return fmt.Errorf("error when writing a message to Redis Stream: %v", err)
 			}
 		}
 		time.Sleep(time.Second / 2)
