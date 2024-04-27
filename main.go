@@ -41,7 +41,7 @@ func main() {
 		}
 	}()
 	repoRedis := repository.NewRedisRepository(redisClient)
-	fmt.Println("Generating started")
+	fmt.Println("Generator started")
 	for {
 		err := repoRedis.GeneratePrices(ctx, repository.InitialMap)
 		if err != nil {

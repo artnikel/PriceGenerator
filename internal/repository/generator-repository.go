@@ -27,18 +27,24 @@ func NewRedisRepository(client *redis.Client) *RedisRepository {
 	}
 }
 
-// nolint gomnd
+// nolint gochecknoglobals
 // InitialMap is a map with name of company and start price of actions
 var InitialMap = map[string]decimal.Decimal{
-	"Logitech":  decimal.NewFromFloat(172.3),
-	"Apple":     decimal.NewFromFloat(930.6),
-	"Microsoft": decimal.NewFromFloat(859.5),
-	"Samsung":   decimal.NewFromFloat(565.3),
-	"Xerox":     decimal.NewFromFloat(415.7),
+	"Logitech":  initRandomPrice(),
+	"Apple":     initRandomPrice(),
+	"Microsoft": initRandomPrice(),
+	"Samsung":   initRandomPrice(),
+	"Xerox":     initRandomPrice(),
+}
+
+func initRandomPrice() decimal.Decimal {
+	min, max := 100.0, 1000.0
+	// nolint gosec
+	return decimal.NewFromFloat(min + rand.Float64()*(max-min))
 }
 
 // nolint gomnd
-// GeneratePrices is a method that generates prices for 5 companies 2 times per second and inserts them into a Redis stream
+// GeneratePrices is a method that generates prices for 5 companies 2 times per second and put them into a Redis stream
 func (r *RedisRepository) GeneratePrices(ctx context.Context, initMap map[string]decimal.Decimal) error {
 	seed := time.Now().UnixNano()
 	rng := rand.New(rand.NewSource(seed))
